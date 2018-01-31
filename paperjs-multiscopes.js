@@ -22,7 +22,7 @@ class ScopeStack {
 
     this._deactivateAllTools()
     this._activateToolForScope(scopeName, toolName)
-    this._setCanvasCursor(tool.cursor)
+    this.setCanvasCursor(tool.cursor)
     this._setSelectedTool(toolName)
   }
 
@@ -103,14 +103,6 @@ class ScopeStack {
 
     Object.keys(this.scopes).forEach(scopeName => {
       this._getScope(scopeName)._fakeTool.activate()
-    })
-  }
-
-  _setCanvasCursor(cursorPath) {
-    Object.keys(this.scopes).forEach(scopeName => {
-      this.scopes[scopeName].view.element.style.cursor = cursorPath ?
-        `url(${cursorPath}), auto` :
-        'auto'
     })
   }
 
