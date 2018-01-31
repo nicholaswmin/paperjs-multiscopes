@@ -7,8 +7,14 @@ class ScopeStack {
     this.scopes = {}
     this.tools = {}
     this.selectedTool = null
+  }
 
-    this._setupScopes()
+  setup(defaultOpts = {}) {
+    this._scopes.forEach(this._setupPaperScope.bind(this))
+    this._scopes.forEach(this._setupScopeTools.bind(this))
+
+    if (defaultOpts.defaultTool)
+      this.selectTool(defaultOpts.defaultTool)
   }
 
   selectTool({ toolName, scopeName }) {
@@ -20,17 +26,12 @@ class ScopeStack {
     this._setSelectedTool(toolName)
   }
 
-  _setupScopes() {
-    this._scopes.forEach(this._setupPaperScope.bind(this))
-    this._scopes.forEach(this._setupScopeTools.bind(this))
-  }
-
   _setupScopeTools(scope) {
     this.tools[scope.name] = scope.tools.reduce((obj, toolDef) => {
       const tool = this._installToolOnScope(toolDef.function, scope.name)
-      tool.cursor = toolDef.cursor;
+      tool.cursor = toolDef.cursor
 
-      [
+      ;[
         ['mousedown', 'onMouseDown'],
         ['mouseup', 'onMouseUp'],
         ['mousedrag', 'onMouseDrag'],

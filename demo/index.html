@@ -90,6 +90,13 @@
         }
       })
 
+      scopeStack.setup({
+        defaultTool: {
+          toolName: 'toolMarker',
+          scopeName: 'teflon'
+        }
+      })
+
       document.querySelector('#marker-btn').addEventListener('click', () => {
         window.scopeStack.selectTool({
           toolName: 'toolMarker',
@@ -109,11 +116,6 @@
           toolName: 'toolPen',
           scopeName: 'sticky'
         })
-      })
-
-      window.scopeStack.selectTool({
-        toolName: 'toolMarker',
-        scopeName: 'teflon'
       })
     }
   </script>
