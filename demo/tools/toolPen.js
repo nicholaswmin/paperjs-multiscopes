@@ -1,6 +1,6 @@
 'use strict'
 
-const toolPen = function(tool) {
+const toolPen = function(tool, context) {
   let path
 
   tool.onMouseDown = function(event) {

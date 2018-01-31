@@ -1,6 +1,6 @@
 'use strict'
 
-const toolHighlighter = function(tool) {
+const toolHighlighter = function(tool, context) {
   let path
 
   tool.onMouseDown = function(event) {

@@ -1,8 +1,9 @@
 'use strict'
 
 class ScopeStack {
-  constructor(scopes) {
+  constructor(scopes, opts = {}) {
     this._scopes = scopes
+    this._opts = opts
     this.scopes = {}
     this.tools = {}
     this.selectedTool = null
@@ -27,14 +28,18 @@ class ScopeStack {
   _setupScopeTools(scope) {
     this.tools[scope.name] = scope.tools.reduce((obj, toolDef) => {
       const tool = this._installToolOnScope(toolDef.function, scope.name)
-      tool.cursor = toolDef.cursor
+      tool.cursor = toolDef.cursor;
 
-      tool.on('keydown', event => {
-        if (event.key === 'shift')
-          this.set('shiftPressed', true)
-      }).on('keyup', event => {
-        if (event.key === 'shift')
-          this.set('shiftPressed', false)
+      [
+        ['mousedown', 'onMouseDown'],
+        ['mouseup', 'onMouseUp'],
+        ['mousedrag', 'onMouseDrag'],
+        ['mousemove', 'onMouseMove'],
+        ['keydown', 'onKeyDown'],
+        ['keyup', 'onKeyUp']
+      ].forEach(actionPair => {
+        const cb = this._opts.on[actionPair[1]]
+        if (cb) tool.on(actionPair[0], cb)
       })
 
       obj[toolDef.name] = Object.assign(tool, {
@@ -48,7 +53,7 @@ class ScopeStack {
   _installToolOnScope(toolFunc, scopeName) {
     this.scopes[scopeName].activate()
 
-    return toolFunc(new paper.Tool())
+    return toolFunc(new paper.Tool(), this._opts.context)
   }
 
   _setupPaperScope(scope) {

@@ -81,7 +81,14 @@
             }
           ]
         }
-      ])
+      ], {
+        context: window,
+        on: {
+          onMouseDown: function() {
+            console.log('down')
+          }
+        }
+      })
 
       document.querySelector('#marker-btn').addEventListener('click', () => {
         window.scopeStack.selectTool({
