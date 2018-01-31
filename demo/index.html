@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="UTF-8">
+    <title>PaperJS multiscopes demo</title>
+    <script src="../paperjs-multiscopes.js"></script>
+    <script src="tools/toolMarker.js"></script>
+    <script src="tools/toolHighlighter.js"></script>
+    <script src="tools/toolPen.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/paper.js/0.11.5/paper-core.min.js"></script>
+    <style>
+      html,
+      body {
+        margin: 0;
+      }
+
+      canvas {
+        position: absolute;
+        z-index: 0;
+        pointer-events: none;
+        background: rgba(0,0,0, 0.1);
+      }
+
+      canvas[resize] {
+        width: 100%;
+        height: 100%;
+      }
+
+      canvas.is-active {
+        z-index: 1;
+        pointer-events: all;
+      }
+
+      .tool-buttons {
+        position: absolute;
+        max-width: 140px;
+        z-index: 10;
+        text-align: center;
+      }
+    </style>
+  </head>
+
+  <body>
+    <div class="tool-buttons">
+      <button id="marker-btn">Marker (canvas 1)</button>
+      <button id="highlighter-btn">Highlighter (canvas 1)</button>
+      <button id="pen-btn">Pen (canvas 2)</button>
+    </div>
+
+    <canvas id="canvas1" resize></canvas>
+    <canvas id="canvas2" resize></canvas>
+  </body>
+
+  <script>
+    window.onload = () => {
+      window.scopeStack = new ScopeStack([
+        {
+          name: 'teflon',
+          canvas: document.querySelector('#canvas1'),
+          tools: [
+            {
+              function: toolMarker,
+              name: 'toolMarker',
+              cursor: 'https://png.icons8.com/dusk/24/000000/marker-pen.png'
+            },
+            {
+              function: toolHighlighter,
+              name: 'toolHighlighter',
+              cursor: 'https://png.icons8.com/color/24/000000/marker-pen.png'
+            }
+          ]
+        },
+        {
+          name: 'sticky',
+          canvas: document.querySelector('#canvas2'),
+          tools: [
+            {
+              function: toolPen,
+              name: 'toolPen',
+              cursor: 'https://png.icons8.com/ultraviolet/24/000000/pen.png'
+            }
+          ]
+        }
+      ])
+
+      document.querySelector('#marker-btn').addEventListener('click', () => {
+        window.scopeStack.selectTool({
+          toolName: 'toolMarker',
+          scopeName: 'teflon'
+        })
+      })
+
+      document.querySelector('#highlighter-btn').addEventListener('click', () => {
+        window.scopeStack.selectTool({
+          toolName: 'toolHighlighter',
+          scopeName: 'teflon'
+        })
+      })
+
+      document.querySelector('#pen-btn').addEventListener('click', () => {
+        window.scopeStack.selectTool({
+          toolName: 'toolPen',
+          scopeName: 'sticky'
+        })
+      })
+
+      window.scopeStack.selectTool({
+        toolName: 'toolMarker',
+        scopeName: 'teflon'
+      })
+    }
+  </script>
+</html>
