@@ -26,6 +26,20 @@ class ScopeStack {
     this._setSelectedTool(toolName)
   }
 
+  setCanvasCursor(cursorPath) {
+    if (!cursorPath) return
+
+    Object.keys(this.scopes).forEach(scopeName => {
+      this.scopes[scopeName].view.element.style.cursor = cursorPath ?
+        `url(${cursorPath}), auto` :
+        'auto'
+    })
+  }
+
+  isTouchDevice() {
+    return 'ontouchstart' in window
+  }
+
   _setupScopeTools(scope) {
     this.tools[scope.name] = scope.tools.reduce((obj, toolDef) => {
       const tool = this._installToolOnScope(toolDef.function, scope.name)
@@ -54,7 +68,7 @@ class ScopeStack {
   _installToolOnScope(toolFunc, scopeName) {
     this.scopes[scopeName].activate()
 
-    return toolFunc(new paper.Tool(), this._opts.context)
+    return toolFunc(new paper.Tool(), this, this._opts.context)
   }
 
   _setupPaperScope(scope) {
@@ -109,6 +123,9 @@ class ScopeStack {
   }
 
   _setSelectedTool(toolName) {
+    if (this._opts.on.toolChange)
+      this._opts.on.toolChange(toolName)
+
     this.selectedTool = toolName
   }
 }
