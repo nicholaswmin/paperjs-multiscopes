@@ -7,7 +7,9 @@
     <script src="tools/toolMarker.js"></script>
     <script src="tools/toolHighlighter.js"></script>
     <script src="tools/toolPen.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/paper.js/0.11.5/paper-core.min.js"></script>
+    <script src="tools/toolSelect.js"></script>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/paper.js/0.11.5/paper-core.js"></script>
     <style>
       html,
       body {
@@ -33,7 +35,7 @@
 
       .tool-buttons {
         position: absolute;
-        max-width: 140px;
+        max-width: 80px;
         z-index: 10;
         text-align: center;
       }
@@ -42,13 +44,14 @@
 
   <body>
     <div class="tool-buttons">
-      <button id="marker-btn">Marker (canvas 1)</button>
-      <button id="highlighter-btn">Highlighter (canvas 1)</button>
-      <button id="pen-btn">Pen (canvas 2)</button>
+      <button id="marker-btn">Marker</button>
+      <button id="highlighter-btn">Highlighter</button>
+      <button id="pen-btn">Pen</button>
+      <button id="select-btn">Select</button>
     </div>
 
-    <canvas id="canvas1" resize></canvas>
-    <canvas id="canvas2" resize></canvas>
+    <canvas id="sticky" resize></canvas>
+    <canvas id="teflon" resize></canvas>
   </body>
 
   <script>
@@ -56,7 +59,7 @@
       window.scopeStack = new ScopeStack([
         {
           name: 'teflon',
-          canvas: document.querySelector('#canvas1'),
+          canvas: document.querySelector('#teflon'),
           tools: [
             {
               function: toolMarker,
@@ -72,11 +75,16 @@
         },
         {
           name: 'sticky',
-          canvas: document.querySelector('#canvas2'),
+          canvas: document.querySelector('#sticky'),
           tools: [
             {
               function: toolPen,
               name: 'toolPen',
+              cursor: 'https://png.icons8.com/ultraviolet/24/000000/pen.png'
+            },
+            {
+              function: toolSelect,
+              name: 'toolSelect',
               cursor: 'https://png.icons8.com/ultraviolet/24/000000/pen.png'
             }
           ]
@@ -92,28 +100,35 @@
 
       scopeStack.setup({
         defaultTool: {
-          toolName: 'toolMarker',
+          toolName: 'toolHighlighter',
           scopeName: 'teflon'
         }
       })
 
       document.querySelector('#marker-btn').addEventListener('click', () => {
-        window.scopeStack.selectTool({
+        window.scopeStack.selectToolForScope({
           toolName: 'toolMarker',
           scopeName: 'teflon'
         })
       })
 
       document.querySelector('#highlighter-btn').addEventListener('click', () => {
-        window.scopeStack.selectTool({
+        window.scopeStack.selectToolForScope({
           toolName: 'toolHighlighter',
           scopeName: 'teflon'
         })
       })
 
       document.querySelector('#pen-btn').addEventListener('click', () => {
-        window.scopeStack.selectTool({
+        window.scopeStack.selectToolForScope({
           toolName: 'toolPen',
+          scopeName: 'sticky'
+        })
+      })
+
+      document.querySelector('#select-btn').addEventListener('click', () => {
+        window.scopeStack.selectToolForScope({
+          toolName: 'toolSelect',
           scopeName: 'sticky'
         })
       })

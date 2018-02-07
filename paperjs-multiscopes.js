@@ -2,60 +2,66 @@
 
 class ScopeStack {
   constructor(scopes, opts = {}) {
-    this._scopes = scopes
     this._opts = opts
-    this.scopes = {}
-    this.tools = {}
-    this.selectedTool = null
+    this._scopes = scopes
+    this.scopes = []
   }
 
   setup(defaultOpts = {}) {
-    this._scopes.forEach(this._setupPaperScope.bind(this))
-    this._scopes.forEach(this._setupScopeTools.bind(this))
-
-    if (defaultOpts.defaultTool)
-      this.selectTool(defaultOpts.defaultTool)
-  }
-
-  selectTool({ toolName, scopeName }) {
-    const tool = this._getToolForScopeName(scopeName, toolName)
-
-    this._deactivateAllTools()
-    this._activateToolForScope(scopeName, toolName)
-    this.setCanvasCursor(tool.cursor)
-    this._setSelectedTool(toolName)
-  }
-
-  setCanvasCursor(cursorPath) {
-    if (!cursorPath) return
-
-    Object.keys(this.scopes).forEach(scopeName => {
-      this.scopes[scopeName].view.element.style.cursor = cursorPath ?
-        `url(${cursorPath}), auto` :
-        'auto'
-    })
-  }
-
-  isTouchDevice() {
-    return 'ontouchstart' in window
-  }
-
-  _setupScopeTools(scope) {
-    this.tools[scope.name] = scope.tools.reduce((obj, toolDef) => {
-      const tool = this._installToolOnScope(toolDef.function, scope.name)
-      tool.cursor = toolDef.cursor
-
-      ;[
-        ['mousedown', 'onMouseDown'],
-        ['mouseup', 'onMouseUp'],
-        ['mousedrag', 'onMouseDrag'],
-        ['mousemove', 'onMouseMove'],
-        ['keydown', 'onKeyDown'],
-        ['keyup', 'onKeyUp']
-      ].forEach(actionPair => {
-        const cb = this._opts.on[actionPair[1]]
-        if (cb) tool.on(actionPair[0], cb)
+    this.scopes = this._scopes.map(scope => new Scope(scope))
+    this.scopes.forEach(scope => {
+      Object.values(scope.tools).forEach(tool => {
+        ;[
+          ['mousedown', 'onMouseDown'],
+          ['mouseup', 'onMouseUp'],
+          ['mousedrag', 'onMouseDrag'],
+          ['mousemove', 'onMouseMove'],
+          ['keydown', 'onKeyDown'],
+          ['keyup', 'onKeyUp']
+        ].forEach(actionPair => {
+          const cb = this._opts.on[actionPair[1]]
+          if (cb) tool.on(actionPair[0], cb)
+        })
       })
+    })
+    this.selectToolForScope(defaultOpts.defaultTool)
+  }
+
+  selectToolForScope({ toolName, scopeName }) {
+    this.scopes.forEach(scope => scope.deactivate())
+    const scope = this.getScope(scopeName)
+    const tool = scope.selectTool(toolName)
+  }
+
+  getScope(name) {
+    return this.scopes.find(scope => scope.name === name)
+  }
+
+  getActiveScope() {
+    return this.scopes.find(scope => scope.active)
+  }
+}
+
+class Scope {
+  constructor(opts) {
+    this._opts = opts
+    this.name = opts.name
+    this.item = new paper.PaperScope()
+    this.item.setup(opts.canvas)
+    this.item.settings = Object.assign(this.item.settings, opts.settings)
+
+    this.activeLayer = new Layer(this.item.project.activeLayer)
+    this.active = false
+
+    this.tools = this._setupTools(opts.tools)
+    this._fakeTool = new paper.Tool()
+  }
+
+  _setupTools(tools) {
+    return tools.reduce((obj, toolDef) => {
+      const tool = this._installToolOnScope(toolDef.function, this.name)
+      tool.name = toolDef.name
+      tool.cursor = toolDef.cursor
 
       obj[toolDef.name] = Object.assign(tool, {
         cursor: toolDef.cursor
@@ -66,58 +72,85 @@ class ScopeStack {
   }
 
   _installToolOnScope(toolFunc, scopeName) {
-    this.scopes[scopeName].activate()
+    this.activate()
 
     return toolFunc(new paper.Tool(), this, this._opts.context)
   }
 
-  _setupPaperScope(scope) {
-    this.scopes[scope.name] = new paper.PaperScope()
-    this.scopes[scope.name].setup(scope.canvas)
-    this.scopes[scope.name]._fakeTool = new paper.Tool()
+  selectTool(name) {
+    const tool = this.tools[name]
+
+    if (tool) {
+      this.activate()
+      tool.activate()
+
+      return tool
+    }
   }
 
-  _activateToolForScope(scopeName, toolName)  {
-    const tool = this._getToolForScopeName(scopeName, toolName)
-    const scope = this._getScope(scopeName)
-    scope.activate()
-    tool.activate()
-    tool.view.element.classList.add('is-active')
+  activate() {
+    this.active = true
+    this.item.activate()
+    this.item.view.element.classList.add('is-active')
   }
 
-  _deactivateToolForScope(toolName, scopeName) {
-    const tool = this._getToolForScopeName(scopeName, toolName)
-    const scope = this._getScope(scopeName)
-
-    scope.activate()
-    tool.emit('deactivate')
-    tool.view.element.classList.remove('is-active')
+  deactivate() {
+    this.active = false
+    this.item.view.element.classList.remove('is-active')
   }
 
-  _deactivateAllTools() {
-    Object.keys(this.tools).forEach(scopeName => {
-      Object.keys(this.tools[scopeName]).forEach(toolName => {
-        this._deactivateToolForScope(toolName, scopeName)
-      })
-    })
-
-    Object.keys(this.scopes).forEach(scopeName => {
-      this._getScope(scopeName)._fakeTool.activate()
-    })
+  getActiveLayer() {
+    return this.activeLayer
   }
 
-  _getToolForScopeName(scopeName, toolName) {
-    return this.tools[scopeName][toolName]
+  hitTest(point, opts) {
+    const hitTest = this.item.project.hitTest(point, opts)
+
+    if (hitTest) {
+      return this.getActiveLayer().findChildById(hitTest.item.data.id)
+    }
+  }
+}
+
+class Layer {
+  constructor(item) {
+    this.item = item
+    this.children = []
   }
 
-  _getScope(scopeName) {
-    return this.scopes[scopeName]
+  addChild(child) {
+    this.children.push(child)
+    this.item.addChild(child.getItem())
   }
 
-  _setSelectedTool(toolName) {
-    if (this._opts.on.toolChange)
-      this._opts.on.toolChange(toolName)
+  findChildById(id) {
+    return this.children.find(child => child.id === id)
+  }
 
-    this.selectedTool = toolName
+  removeChild(child) {
+    this.children = this.children.filter(c => c.id !== child.id)
+    child.getItem().remove()
+  }
+
+  unselectAll() {
+    this.children.forEach(child => child.getItem().selected = false)
+  }
+}
+
+class Item {
+  constructor(opts, item) {
+    this.item = item
+    this.id = opts.id || Math.floor(Math.random() * 1000000)
+    this.item.data.id = this.id
+  }
+
+  getItem() {
+    return this.item
+  }
+}
+
+class Path extends Item {
+  constructor(opts = {}) {
+    super(opts, new paper.Path())
   }
 }

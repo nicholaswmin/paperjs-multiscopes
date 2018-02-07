@@ -4,14 +4,25 @@ const toolHighlighter = function(tool, context) {
   let path
 
   tool.onMouseDown = function(event) {
-    path = new paper.Path()
-    path.strokeColor = 'yellow'
-    path.strokeWidth = 20
-    path.opacity = 0.4
+    path = new Path()
+    path.getItem()
+      .set({
+        strokeColor: 'yellow',
+        strokeWidth: 20,
+        opacity: 0.4
+      })
   }
 
   tool.onMouseDrag = function(event) {
-    path.add(event.point)
+    path.getItem()
+      .add(event.point)
+  }
+
+  tool.onMouseUp = function(event) {
+    path.getItem().smooth()
+    scopeStack.getScope('sticky')
+      .getActiveLayer()
+      .addChild(path)
   }
 
   return tool
